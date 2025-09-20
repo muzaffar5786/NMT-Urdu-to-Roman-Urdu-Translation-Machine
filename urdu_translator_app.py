@@ -168,6 +168,61 @@ def load_model():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     try:
+        # Load checkpoint
+        model_path = "best_model.pth"
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        
+        # ======== PASTE DEBUG CODE HERE ========
+        # DEBUG: Check if vocabularies loaded correctly
+        print("Source vocab size:", len(checkpoint['src_bpe_vocab']))
+        print("Target vocab size:", len(checkpoint['trg_bpe_vocab']))
+        
+        # Test if we can access some tokens
+        if '<s>' in checkpoint['trg_bpe_vocab']:
+            print("<s> token ID:", checkpoint['trg_bpe_vocab']['<s>'])
+        if 'a' in checkpoint['trg_bpe_vocab']:
+            print("'a' token ID:", checkpoint['trg_bpe_vocab']['a'])
+        # ======== END DEBUG CODE ========
+        
+        # Reconstruct tokenizers
+        src_bpe = BPETokenizer()
+        src_bpe.vocab = checkpoint['src_bpe_vocab']
+        src_bpe.inverse = {i: tok for tok, i in src_bpe.vocab.items()}
+        
+        trg_bpe = BPETokenizer()
+        trg_bpe.vocab = checkpoint['trg_bpe_vocab'] 
+        trg_bpe.inverse = {i: tok for tok, i in trg_bpe.vocab.items()}
+        
+        # ======== MORE DEBUG CODE ========
+        # Test tokenization
+        test_text = "جرم ہے تیری گلی سے سر جھکا کر لوٹنا"
+        test_ids = src_bpe.encode(test_text)
+        print("Test encoding length:", len(test_ids))
+        print("First 10 tokens:", test_ids[:10])
+        # ======== END DEBUG CODE ========
+        
+        # Recreate model
+        attention = Attention(config.hidden_dim, config.hidden_dim)
+        enc = Encoder(len(src_bpe.vocab), config.embedding_dim, config.hidden_dim, 
+                     config.encoder_layers, config.dropout, config.bidirectional)
+        dec = DecoderWithAttention(len(trg_bpe.vocab), config.embedding_dim, config.hidden_dim, 
+                                  config.hidden_dim, config.dropout, attention)
+        model = Seq2Seq(enc, dec, src_bpe.vocab['<pad>'], trg_bpe.vocab['<s>'], device)
+        
+        # Load weights
+        model.load_state_dict(checkpoint['model_state'])
+        model.eval()
+        
+        print("✅ Model loaded successfully!")
+        return model, src_bpe, trg_bpe, device
+        
+    except Exception as e:
+        print(f"❌ Error loading model: {str(e)}")
+        return None, None, None, None
+@st.cache_resource
+def load_model():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    try:
         # Load checkpoint - UPDATE THIS PATH to your .pth file location
         model_path = "best_model.pth"  # Change this to your actual file path
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
@@ -204,6 +259,31 @@ def load_model():
 # --------------------------
 # Translation Function
 # --------------------------
+def translate_text(model, src_bpe, trg_bpe, urdu_text, device):
+    # ... (your existing code) ...
+
+# ======== PASTE TEST FUNCTION HERE ========
+def test_model_translation(model, src_bpe, trg_bpe, device):
+    """Test with the same example that worked in Colab"""
+    test_text = "جرم ہے تیری گلی سے سر جھکا کر لوٹنا"
+    
+    try:
+        with torch.no_grad():
+            src_ids = src_bpe.encode(test_text)
+            src_tensor = torch.tensor(src_ids, dtype=torch.long, device=device).unsqueeze(1)
+            src_lens = torch.tensor([len(src_ids)], device=device)
+            
+            pred_ids = greedy_decode(model, src_tensor, src_lens, trg_bpe)
+            pred_text = trg_bpe.decode(pred_ids)
+            
+        print(f"Test input: {test_text}")
+        print(f"Test output: {pred_text}")
+        return pred_text
+        
+    except Exception as e:
+        print(f"Test failed: {str(e)}")
+        return None
+# ======== END TEST FUNCTION ========
 def greedy_decode(model, src, src_lens, trg_bpe, max_len=50):
     model.eval()
     with torch.no_grad():
@@ -322,3 +402,29 @@ def main():
 if __name__ == "__main__":
 
     main()
+def main():
+    st.set_page_config(
+        page_title="Urdu to Roman Urdu Translator",
+        page_icon="🌐",
+        layout="wide"
+    )
+    
+    st.title("🌐 Urdu to Roman Urdu Translator")
+    
+    # Load model
+    model, src_bpe, trg_bpe, device = load_model()
+    
+    # ======== ADD TEST CALL HERE ========
+    if model is not None:
+        # Run test translation
+        test_result = test_model_translation(model, src_bpe, trg_bpe, device)
+        if test_result:
+            st.info(f"Model test: {test_result}")
+        else:
+            st.error("Model test failed!")
+    # ======== END TEST CALL ========
+    
+    if model is None:
+        return
+    
+    # ... rest of your main function ...
