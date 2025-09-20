@@ -128,12 +128,14 @@ def test_model_translation(model, src_bpe, trg_bpe, device):
 # Streamlit App
 # --------------------------
 def main():
+    # THIS MUST BE THE FIRST STREAMLIT COMMAND
     st.set_page_config(
         page_title="Urdu to Roman Urdu Translator",
         page_icon="🌐",
         layout="wide"
     )
     
+    # Then the rest of your code
     st.title("🌐 Urdu to Roman Urdu Translator")
     st.markdown("""
     This AI-powered tool translates Urdu text to Roman Urdu using a neural translation model.
@@ -142,6 +144,7 @@ def main():
     
     # Load model
     model, src_bpe, trg_bpe, device = load_model()
+
     
     # ======== ADD TEST CALL HERE ========
     if model is not None:
@@ -210,4 +213,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
