@@ -1,5 +1,5 @@
 streamlit==1.28.0
-torch==2.3.0 --index-url https://download.pytorch.org/whl/cpu
-numpy==1.24.0
-nltk==3.8.1
-tqdm==4.66.0
+torch>=2.2.0
+numpy>=1.24.0
+nltk>=3.8.0
+tqdm>=4.66.0
