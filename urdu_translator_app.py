@@ -7,7 +7,6 @@ from typing import List
 import numpy as np
 import nltk
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-import Levenshtein
 import os
 
 # Download NLTK data
@@ -321,4 +320,5 @@ def main():
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
+
     main()
